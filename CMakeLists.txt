@@ -113,4 +113,3 @@ set(CMAKE_C_FLAGS_DEBUG ${C_FLAGS_DEBUG})
 # linker flags & script here.
 
 add_subdirectory(libs/hello)
-add_subdirectory(projects/lightstack)
