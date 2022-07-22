@@ -1,7 +1,40 @@
 cmake_minimum_required(VERSION 3.15.0)
 
+# Tell cmake our compiler is working. We need to do this because else
+# it will try to compile a basic C program, and will fail at the linking step.
+set(CMAKE_C_COMPILER_WORKS 1)
+set(CMAKE_CXX_COMPILER_WORKS 1)
+
 # Top-level project
 project(emb-cmake)
+
+# Setup the path to nrfx and the MDK (that has the device headers)
+if (NOT NRFX_PATH)
+  if (DEFINED ENV{NRFX_PATH})
+    set(NRFX_PATH $ENV{NRFX_PATH})
+  else()
+    message(FATAL_ERROR
+      "NRFX not found. Please specify its path with -DNRFX_PATH=[path] or
+       the NRFX_PATH environment variable.")
+  endif()
+endif()
+
+message(STATUS "Using nrfx at ${NRFX_PATH}")
+set(MDK_PATH ${NRFX_PATH}/mdk)
+
+# Do the same for CMSIS headers (dependency of nrfx)
+if (NOT CMSIS_PATH)
+  if (DEFINED ENV{CMSIS_PATH})
+    set(CMSIS_PATH $ENV{CMSIS_PATH})
+  else()
+    message(FATAL_ERROR
+      "CMSIS not found. Please specify its path with -DCMSIS_PATH=[path] or
+       the CMSIS_PATH environment variable.")
+  endif()
+endif()
+
+message(STATUS "Using CMSIS at ${CMSIS_PATH}")
+set(CMSIS_INCLUDE_PATH ${CMSIS_PATH}/Include)
 
 ## Setup the tool paths
 # Select the toolchain
@@ -21,13 +54,16 @@ if (NOT GCC_PATH)
   endif()
 
   set(GCC_PATH ${SDK_PATH}/arm-zephyr-eabi)
-  set(GCC_VARIANT "arm-zephyr-eabi-gcc")
+  set(GCC_VARIANT "arm-zephyr-eabi")
   message(STATUS "Using the zephyr toolchain: ${SDK_PATH}")
 else()
   message(STATUS "Using a custom toolchain: ${GCC_PATH}")
   # Assuming arm-none-eabi-gcc
-  set(GCC_VARIANT "arm-none-eabi-gcc")
+  set(GCC_VARIANT "arm-none-eabi")
 endif()
+
+# Include the std headers everywhere
+include_directories(BEFORE ${GCC_PATH}/${GCC_VARIANT}/include)
 
 ## Compiler & linker
 
@@ -36,13 +72,8 @@ set(CMAKE_SYSTEM_NAME Generic)
 set(CMAKE_SYSTEM_PROCESSOR arm)
 set(CMAKE_CROSSCOMPILING 1)
 
-# Tell cmake our compiler is working. We need to do this because else
-# it will try to compile a basic C program, and will fail at the linking step.
-set(CMAKE_C_COMPILER_WORKS 1)
-set(CMAKE_CXX_COMPILER_WORKS 1)
-
 # Set the compiler
-set(CMAKE_C_COMPILER ${GCC_PATH}/bin/${GCC_VARIANT} CACHE PATH "" FORCE)
+set(CMAKE_C_COMPILER ${GCC_PATH}/bin/${GCC_VARIANT}-gcc CACHE PATH "" FORCE)
 
 # Set the compiler flags
 #
